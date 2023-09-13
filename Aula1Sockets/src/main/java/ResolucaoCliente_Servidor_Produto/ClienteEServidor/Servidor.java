@@ -8,9 +8,10 @@ import java.net.Socket;
 import java.util.ArrayList;
 
 public class Servidor {
+    static   ArrayList<Produto> produtoList = new ArrayList<>();
     public static void main(String[] args) throws IOException {
 
-        ArrayList<Produto> produtoList = new ArrayList<>();
+
 
         try (ServerSocket serverSocket = new ServerSocket(2335)) {
             System.out.println("Servidor Disponivel! ");
@@ -19,6 +20,8 @@ public class Servidor {
 
             DataInputStream dis = new DataInputStream(socket.getInputStream());
             DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+            ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+            ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 
             while (true) {
 
@@ -31,14 +34,34 @@ public class Servidor {
                         System.exit(0);
                         break;
                     case 1:
-                        ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
                         Produto produto = (Produto) ois.readObject();
                         produtoList.add(produto);
                         dos.writeUTF("Produto Inserido com Sucesso! ");
                         break;
                     case 2:
-                        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+
                         oos.writeObject(produtoList);
+
+
+                        break;
+                    case 3:
+                        Produto produtoProcurado = new Produto();
+                        boolean verificador = Boolean.FALSE;
+                       int id = dis.readInt();
+                       for(Produto pro : produtoList) {
+                           if (pro.getId() == id) {
+                               produtoProcurado = pro;
+                            verificador = Boolean.TRUE;
+                           }
+                       }
+                       dos.writeBoolean(verificador);
+                        if(verificador){
+                          oos.writeObject(produtoProcurado);
+                          Produto produtoPorActualizar = (Produto)ois.readObject();
+
+                          produtoList.set(produtoList.indexOf(produtoProcurado),produtoPorActualizar);
+                          dos.writeUTF("Produto Actualizado");
+                        }
                         break;
                     default:
                         dos.writeUTF("Opção inválida! Tente novamente.");
